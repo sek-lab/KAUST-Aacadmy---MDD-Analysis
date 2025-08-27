@@ -1,0 +1,109 @@
+cd week6/transcriptomics
+
+# Organize Workspace
+mkdir scripts
+mkdir results/fetchngs
+
+# Create file with GSE accesion
+nano samples.csv
+GSE190518
+
+# Create a script to run nf-core fetchngs workflow
+nano 01-run_fetchngs.sh
+
+
+#!/bin/bash
+
+nextflow run nf-core/fetchngs \
+  -r "1.12.0" \
+  -profile singularity \
+  --input samples.csv \
+  --outdir fastq \
+  --nf_core_pipeline rnaseq \
+  -resume
+  
+  
+bash 01-run_fetchngs.sh
+
+# Create rnasplice input files
+# (1) Samplesheet
+nano samplesheet.csv
+
+
+sample,fastq_1,fastq_2,strandedness,condition,run_accession,experiment_accession,sample_accession,secondary_sample_access>
+SRX13362829,fastq/SRX13362829_SRR17179492_1.fastq.gz,fastq/SRX13362829_SRR17179492_2.fastq.gz,reverse,HC,SRR17179492,SRX1>
+SRX13362830,fastq/SRX13362830_SRR17179491_1.fastq.gz,fastq/SRX13362830_SRR17179491_2.fastq.gz,reverse,HC,SRR17179491,SRX1>
+SRX13362831,fastq/SRX13362831_SRR17179490_1.fastq.gz,fastq/SRX13362831_SRR17179490_2.fastq.gz,reverse,HC,SRR17179490,SRX1>
+SRX13362832,fastq/SRX13362832_SRR17179489_1.fastq.gz,fastq/SRX13362832_SRR17179489_2.fastq.gz,reverse,HC,SRR17179489,SRX1>
+SRX13362833,fastq/SRX13362833_SRR17179488_1.fastq.gz,fastq/SRX13362833_SRR17179488_2.fastq.gz,reverse,MDD,SRR17179488,SRX>
+SRX13362834,fastq/SRX13362834_SRR17179487_1.fastq.gz,fastq/SRX13362834_SRR17179487_2.fastq.gz,reverse,MDD,SRR17179487,SRX>
+SRX13362835,fastq/SRX13362835_SRR17179486_1.fastq.gz,fastq/SRX13362835_SRR17179486_2.fastq.gz,reverse,MDD,SRR17179486,SRX>
+SRX13362836,fastq/SRX13362836_SRR17179485_1.fastq.gz,fastq/SRX13362836_SRR17179485_2.fastq.gz,reverse,MDD,SRR17179485,SRX>
+
+
+# (2) Contrastsheet
+
+
+contrast,treatment,control
+MDD_HC,MDD,HC
+
+
+# Create a script to run nf-core rnasplice workflow
+mkdir results/rnasplice
+
+nano 02-run_rnasplice.sh
+
+
+#!/bin/bash
+
+nextflow run nf-core/rnasplice \
+   --input samplesheet.csv \
+   --contrast contrastsheet.csv \
+   --genome GRCh38 \
+   --aligner star_salmon \
+   --dexseq_exon true \
+   --outdir results/rnasplice \
+   -profile singualarity \
+   --max_cpus 8 \
+   --max_memory '32.GB' \
+   -resume
+
+
+bash 02-run_rnasplice.sh
+
+# BAM output validation
+samtools view -H results/rnasplice/star_salmon/SRX13362834_sorted.bam | grep -E '^@HD.*SO:coordinate' || echo "NOT coordinate-sorted"
+
+samtools quickcheck -v results/rnasplice/star_salmon/SRX13362834_sorted.bam || echo "BAM is corrupted/incomplete"
+
+ls -lh results/rnasplice/star_salmon/SRX13362834_sorted.bam results/rnasplice/star_salmon/SRX13362834_sorted.bam.bai
+samtools idxstats results/rnasplice/star_salmon/SRX13362834_sorted.bam | head  
+
+
+# Create path to bam
+
+nano HC.txt
+
+results/rnasplice/star_salmon/SRX13362829_sorted.bam,results/rnasplice/star_salmon/SRX13362830_sorted.bam,results/rnasplice/star_salmon/SRX13362831_sorted.bam,results/rnasplice/star_salmon/SRX13362832_sorted.bam
+
+
+nano MDD.txt
+
+results/rnasplice/star_salmon/SRX13362833_sorted.bam,results/rnasplice/star_salmon/SRX13362834_sorted.bam,results/rnasplice/star_salmon/SRX13362835_sorted.bam,results/rnasplice/star_salmon/SRX13362836_sorted.bam
+
+# RMATS
+
+rmats.py --b1 HC.txt --b2 MDD.txt --gtf Homo_sapiens.GRCh38.114.gtf -t paired --readLength 50 --variable-read-length --libType fr-firststrand --nthread 8 --od results/rmats --tmp results/rmats/tmp
+
+# Visualize
+
+rmats2sashimiplot \
+  --event-type SE -e results/rmats/SE.MATS.JCEC.txt \
+  --b1 results/rnasplice/star_salmon/SRX13362829_sorted.bam,results/rnasplice/star_salmon/SRX13362830_sorted.bam,results/rnasplice/star_salmon/SRX13362831_sorted.bam,results/rnasplice/star_salmon/SRX13362832_sorted.bam \
+  --b2 results/rnasplice/star_salmon/SRX13362833_sorted.bam,results/rnasplice/star_salmon/SRX13362834_sorted.bam,results/rnasplice/star_salmon/SRX13362835_sorted.bam,results/rnasplice/star_salmon/SRX13362836_sorted.bam \
+  -e results/rmats/SE.MATS.JC.txt \
+  --l1 HC --l2 MDD \
+  -o results/sashimi_plots \
+  --eventid 54574
+  
+

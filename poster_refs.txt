@@ -1,0 +1,7 @@
+- Wang, Yu et al. “A Whole Transcriptome Analysis in Peripheral Blood Suggests That Energy Metabolism and Inflammation Are Involved in Major Depressive Disorder.” Frontiers in psychiatry vol. 13 907034. 13 May. 2022, doi:10.3389/fpsyt.2022.907034.
+
+- Wang, Y., Z. Xie, E. Kutschera, et al. "rMATS-turbo: An Efficient and Flexible Computational Tool for Alternative Splicing Analysis of Large-Scale RNA-seq Data." Nature Protocols, vol. 19, no. 4, 2024, pp. 1083–1104. doi:10.1038/s41596-023-00944-2.
+
+- Bakhtiarizadeh, M. R. “Deciphering the Role of Alternative Splicing as a Potential Regulator in Fat-Tail Development of Sheep: A Comprehensive RNA-Seq Based Study.” Scientific Reports, vol. 14, 2024, article no. 2361. Nature Publishing Group, doi:10.1038/s41598-024-52855-1.
+
+- Park, Eddie, et al. “The Expanding Landscape of Alternative Splicing Variation in Human Populations.” The American Journal of Human Genetics, vol. 102, no. 1, 4 Jan. 2018, pp. 11–26. https://doi.org/10.1016/j.ajhg.2017.11.002
